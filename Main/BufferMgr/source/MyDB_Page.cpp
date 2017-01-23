@@ -8,3 +8,10 @@
 
 #include <stdio.h>
 #include "MyDB_Page.h"
+
+MyDB_Page :: MyDB_Page () {
+}
+
+MyDB_Page :: ~MyDB_Page () {
+}
+

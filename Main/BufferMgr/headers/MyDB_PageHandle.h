@@ -34,10 +34,12 @@ public:
 	~MyDB_PageHandleBase ();
 
 	// FEEL FREE TO ADD ADDITIONAL PUBLIC METHODS
+    void MyDB_PageHandleBase(sharedPtr<Page>);
 
 private:
 
 	// YOUR CODE HERE
+    shared_ptr<Page> pagePtr;
     
 };
 

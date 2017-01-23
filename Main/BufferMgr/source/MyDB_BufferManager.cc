@@ -14,13 +14,16 @@ MyDB_PageHandle MyDB_BufferManager :: getPage (MyDB_TablePtr whichTable, long i)
 	
     //is page currently in the buffer?
     pair<string,long> key = new pair<string,long>(*whichTable.getName(),i);
-    if (IDTable.find(key) == IDTable.end()) {
+    std::map<pair<string,long>,sharedPtr<Page>>::iterator it;
+    it = IDTable.find(key);
+    if (it == IDTable.end()) {
         // not found
         //allocate a free page in the buffer to this page and create a new handle and return handle
         
     } else {
         // found
-        
+        //create new PageHandle
+        MyDB_PageHandle handle = new MyDB_PageHandle(it->second);
     }
     
     //is i valid?
