@@ -58,6 +58,7 @@ private:
     size_t numPages;
     string tempFile;
     
+    //consider using unorderedmap
     map<pair<string, long>, shared_ptr<MyDB_Page>> IDTable;
     
 

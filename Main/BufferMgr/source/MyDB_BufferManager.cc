@@ -4,6 +4,10 @@
 
 #include "MyDB_BufferManager.h"
 #include <string>
+#include <fcntl.h>
+#include <unistd.h>
+
+
 
 using namespace std;
 
@@ -17,25 +21,31 @@ MyDB_PageHandle MyDB_BufferManager :: getPage (MyDB_TablePtr whichTable, long i)
     map<pair<string,long>,shared_ptr<MyDB_Page>>::iterator it;
     it = IDTable.find(key);
     if (it == IDTable.end()) {
-        // not found
-        //allocate a free page in the buffer to this page and create a new handle and return handle
+        // not found in buffer therefore in DB table
+        // read it into the buffer
+        //string& page = whichTable.getStorageLoc() + i * this.pageSize;
+        int fd = open (whichTable->getStorageLoc ().c_str (), O_CREAT|O_RDWR|O_SYNC, 0666);
+        off_t temp = lseek(fd, i * this->pageSize,  SEEK_CUR);
+        
+        // is there an empty spot in buffer? Is the buffer full?
+        // remove from IDtable. Check dirty bit. If dirty writeback to db table. If not dirty just delete somehow. What happens to any pagehandles in the system that currently reference that page in buffer?
+        // if yes create a new page handle and place in IDTable
+        // if no evict LRU page
+        
         
     } else {
         // found
-        //create new PageHandle
-        shared_ptr<MyDB_Page> temp(it->second);
-        //it->second
-        MyDB_PageHandle handle = make_shared<MyDB_PageHandleBase>(temp);
+        //create new PageHandle and return
+        MyDB_PageHandle handle = make_shared<MyDB_PageHandleBase>(shared_ptr<MyDB_Page>(it->second));
+        //******************increment LRU number
+        
+        return handle;
     }
     
     //is i valid?
-    //string& page = whichTable.getStorageLoc() + i * this.pageSize;
-//    int fd = open (whichTable->getStorageLoc ().c_str (), O_CREAT | O_RDWR | O_SYNCH, 0666);
-//    off_t temp = lseek(fd, i * this.pageSize,  SEEK_CUR);
+    
+//
 //    read(fd, )
-    
-    
-    //if yes return a handle in the buffer
     
     return nullptr;
 }
