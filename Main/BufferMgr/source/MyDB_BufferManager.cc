@@ -14,7 +14,7 @@ MyDB_PageHandle MyDB_BufferManager :: getPage (MyDB_TablePtr whichTable, long i)
 	
     //is page currently in the buffer?
     pair<string,long> key(whichTable->getName(),i);
-    std::map<pair<string,long>,shared_ptr<MyDB_Page>>::iterator it;
+    map<pair<string,long>,shared_ptr<MyDB_Page>>::iterator it;
     it = IDTable.find(key);
     if (it == IDTable.end()) {
         // not found
