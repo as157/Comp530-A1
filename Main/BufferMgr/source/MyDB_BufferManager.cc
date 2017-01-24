@@ -13,8 +13,8 @@ using namespace std;
 MyDB_PageHandle MyDB_BufferManager :: getPage (MyDB_TablePtr whichTable, long i) {
 	
     //is page currently in the buffer?
-    pair<string,long> key = new pair<string,long>(*whichTable.getName(),i);
-    std::map<pair<string,long>,sharedPtr<Page>>::iterator it;
+    pair<string,long> key(whichTable->getName(),i);
+    std::map<pair<string,long>,shared_ptr<MyDB_Page>>::iterator it;
     it = IDTable.find(key);
     if (it == IDTable.end()) {
         // not found
@@ -23,14 +23,16 @@ MyDB_PageHandle MyDB_BufferManager :: getPage (MyDB_TablePtr whichTable, long i)
     } else {
         // found
         //create new PageHandle
-        MyDB_PageHandle handle = new MyDB_PageHandle(it->second);
+        shared_ptr<MyDB_Page> temp(it->second);
+        //it->second
+        MyDB_PageHandle handle = make_shared<MyDB_PageHandleBase>(temp);
     }
     
     //is i valid?
     //string& page = whichTable.getStorageLoc() + i * this.pageSize;
-    int fd = open (whichTable->getStorageLoc ().c_str (), O_CREAT | O_RDWR | O_SYNCH, 0666);
-    off_t temp = lseek(fd, i * this.pageSize,  SEEK_CUR);
-    read(fd, )
+//    int fd = open (whichTable->getStorageLoc ().c_str (), O_CREAT | O_RDWR | O_SYNCH, 0666);
+//    off_t temp = lseek(fd, i * this.pageSize,  SEEK_CUR);
+//    read(fd, )
     
     
     //if yes return a handle in the buffer
@@ -59,10 +61,9 @@ void MyDB_BufferManager :: unpin (MyDB_PageHandle unpinMe) {
 }
 
 MyDB_BufferManager :: MyDB_BufferManager (size_t pageSize, size_t numPages, string tempFile) {
-    this.pageSize = pageSize;
-    this.numPages = numPages;
-    this.tempFile = tempFile;
-    this.IDTable = new map<pair<string, long>, shared_ptr<char>>();
+    this->pageSize = pageSize;
+    this->numPages = numPages;
+    this->tempFile = tempFile;
 }
 
 MyDB_BufferManager :: ~MyDB_BufferManager () {

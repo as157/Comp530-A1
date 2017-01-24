@@ -8,16 +8,12 @@
 
 /* Begin PBXFileReference section */
 		B0263B3B1E3524D500FCDB31 /* Main */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Main; path = ../Main; sourceTree = "<group>"; };
-		B0263B3C1E35572200FCDB31 /* MyDB_Page.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = MyDB_Page.h; path = ../Main/BufferMgr/headers/MyDB_Page.h; sourceTree = "<group>"; };
-		B0263B3D1E35574A00FCDB31 /* MyDB_Page.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = MyDB_Page.cpp; path = ../Main/BufferMgr/source/MyDB_Page.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
 		B0263B301E3523F300FCDB31 = {
 			isa = PBXGroup;
 			children = (
-				B0263B3D1E35574A00FCDB31 /* MyDB_Page.cpp */,
-				B0263B3C1E35572200FCDB31 /* MyDB_Page.h */,
 				B0263B3B1E3524D500FCDB31 /* Main */,
 			);
 			sourceTree = "<group>";
@@ -32,7 +28,7 @@
 			buildPhases = (
 			);
 			buildToolPath = /usr/local/Cellar/scons/2.4.1/bin/scons;
-			buildWorkingDirectory = "/Users/adriansmart/Documents/Comp 530/Build";
+			buildWorkingDirectory = "/Users/adriansmart/Documents/Comp530-A1/Build";
 			dependencies = (
 			);
 			name = A1;
@@ -194,6 +190,7 @@
 				B0263B3A1E3523F300FCDB31 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

@@ -44,7 +44,7 @@
       allowLocationSimulation = "YES">
       <PathRunnable
          runnableDebuggingMode = "0"
-         FilePath = "/Users/adriansmart/Documents/Comp 530/Build/bin/bufferUnitTest">
+         FilePath = "/Users/adriansmart/Documents/Comp530-A1/Build/bin/bufferUnitTest">
       </PathRunnable>
       <MacroExpansion>
          <BuildableReference

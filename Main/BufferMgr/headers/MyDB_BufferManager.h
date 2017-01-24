@@ -5,6 +5,7 @@
 #include "MyDB_PageHandle.h"
 #include "MyDB_Table.h"
 #include "MyDB_Page.h"
+#include <map>
 
 using namespace std;
 
@@ -57,7 +58,7 @@ private:
     size_t numPages;
     string tempFile;
     
-    map<pair<string, long>, shared_ptr<Page>> IDTable;
+    map<pair<string, long>, shared_ptr<MyDB_Page>> IDTable;
     
 
 };

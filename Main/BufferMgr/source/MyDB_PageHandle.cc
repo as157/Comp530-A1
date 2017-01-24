@@ -12,8 +12,8 @@ void *MyDB_PageHandleBase :: getBytes () {
 void MyDB_PageHandleBase :: wroteBytes () {
 }
 
-MyDB_PageHandleBase :: MyDB_PageHandleBase () {
-    this.pagePtr = page;
+MyDB_PageHandleBase :: MyDB_PageHandleBase (shared_ptr<MyDB_Page> page) {
+    this->pagePtr = page;
 }
 
 MyDB_PageHandleBase :: ~MyDB_PageHandleBase () {
