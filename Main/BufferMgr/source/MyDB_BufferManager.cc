@@ -6,8 +6,7 @@
 #include <string>
 #include <fcntl.h>
 #include <unistd.h>
-
-
+#include <stdlib.h>
 
 using namespace std;
 
@@ -18,18 +17,28 @@ MyDB_PageHandle MyDB_BufferManager :: getPage (MyDB_TablePtr whichTable, long i)
 	
     //is page currently in the buffer?
     pair<string,long> key(whichTable->getName(),i);
-    map<pair<string,long>,shared_ptr<MyDB_Page>>::iterator it;
-    it = IDTable.find(key);
-    if (it == IDTable.end()) {
+    auto it = pageTable.find(key);
+    
+    if (it == pageTable.end()) {
         // not found in buffer therefore in DB table
-        // read it into the buffer
-        //string& page = whichTable.getStorageLoc() + i * this.pageSize;
-        int fd = open (whichTable->getStorageLoc ().c_str (), O_CREAT|O_RDWR|O_SYNC, 0666);
-        off_t temp = lseek(fd, i * this->pageSize,  SEEK_CUR);
+        //check for empty spot in buffer
+        char* newPage;
+        if(this->pageTable.size() != this->pageSize){
+            newPage = &this->buffer[this->pageSize * this->pageTable.size()-1];
+        }
         
-        // is there an empty spot in buffer? Is the buffer full?
-        // remove from IDtable. Check dirty bit. If dirty writeback to db table. If not dirty just delete somehow. What happens to any pagehandles in the system that currently reference that page in buffer?
-        // if yes create a new page handle and place in IDTable
+        //otherwise evict a page
+        else{
+            
+        }
+        
+        // read data into the buffer
+        int fd = open (whichTable->getStorageLoc ().c_str (), O_CREAT|O_RDWR|O_SYNC, 0666);
+        lseek(fd, i * this->pageSize,  SEEK_CUR);
+        read(fd, newPage, this->pageSize);
+        
+        // remove from pageTable. Check dirty bit. If dirty writeback to db table. If not dirty just delete somehow. What happens to any pagehandles in the system that currently reference that page in buffer?
+        // if yes create a new page handle and place in pageTable
         // if no evict LRU page
         
         
@@ -41,11 +50,6 @@ MyDB_PageHandle MyDB_BufferManager :: getPage (MyDB_TablePtr whichTable, long i)
         
         return handle;
     }
-    
-    //is i valid?
-    
-//
-//    read(fd, )
     
     return nullptr;
 }
@@ -74,6 +78,9 @@ MyDB_BufferManager :: MyDB_BufferManager (size_t pageSize, size_t numPages, stri
     this->pageSize = pageSize;
     this->numPages = numPages;
     this->tempFile = tempFile;
+    
+    //create buffer
+    this->buffer = (char*) malloc(this->pageSize * this->numPages);
 }
 
 MyDB_BufferManager :: ~MyDB_BufferManager () {

@@ -6,6 +6,7 @@
 #include "MyDB_Table.h"
 #include "MyDB_Page.h"
 #include <map>
+#include <unordered_map>
 
 using namespace std;
 
@@ -58,9 +59,19 @@ private:
     size_t numPages;
     string tempFile;
     
-    //consider using unorderedmap
-    map<pair<string, long>, shared_ptr<MyDB_Page>> IDTable;
+    struct MyHash{
+        size_t operator()(const pair<string,long> k)const
+        {
+            size_t res = 17;
+            res = res * 31 + std::hash<string>()(k.first);
+            res = res * 31 + std::hash<int>()(k.second);
+            return res;
+        }
+    };
+    std::unordered_map<pair<string,int>, shared_ptr<MyDB_Page>, MyHash> pageTable;
     
+    //buffer memory
+    char* buffer;
 
 };
 
