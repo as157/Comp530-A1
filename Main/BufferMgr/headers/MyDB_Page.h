@@ -17,6 +17,7 @@ class MyDB_Page{
 public:
     
     MyDB_Page();
+    MyDB_Page(char* addr);
     ~MyDB_Page();
     
     
@@ -26,6 +27,7 @@ private:
     int LRUPos;
     int refCount;
     int dirtyBit;
+    char* pageAddress;
     
     
 };

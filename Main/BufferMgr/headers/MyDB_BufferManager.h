@@ -7,6 +7,7 @@
 #include "MyDB_Page.h"
 #include <map>
 #include <unordered_map>
+#include <queue>
 
 using namespace std;
 
@@ -68,8 +69,9 @@ private:
             return res;
         }
     };
-    std::unordered_map<pair<string,int>, shared_ptr<MyDB_Page>, MyHash> pageTable;
-    
+    std::unordered_map<pair<string,int>, MyDB_Page, MyHash> pageTable;
+    //shared_ptr<MyDB_Page>* bufferTable;
+    std::queue<char*> bufferQ;
     //buffer memory
     char* buffer;
 

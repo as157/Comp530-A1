@@ -12,6 +12,10 @@
 MyDB_Page :: MyDB_Page () {
 }
 
+MyDB_Page :: MyDB_Page(char* addr) {
+    this->pageAddress = addr;
+}
+
 MyDB_Page :: ~MyDB_Page () {
 }
 
