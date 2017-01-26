@@ -23,15 +23,22 @@ MyDB_PageHandle MyDB_BufferManager :: getPage (MyDB_TablePtr whichTable, long i)
         // not found in buffer therefore in DB table
         //check for availability in buffer
         if(!this->bufferQ.empty()){
-            this->bufferQ.pop();
+            //get available address in buffer
             char* newAddr = this->bufferQ.front();
+            this->bufferQ.pop();
+            
+            //create new page and add to pageTable
             MyDB_Page newPage(newAddr);
             this->pageTable.insert({key, newPage});
             
-            // read data into the buffer
+            // read data into the buffer at page address
             int fd = open (whichTable->getStorageLoc ().c_str (), O_CREAT|O_RDWR|O_SYNC, 0666);
             lseek(fd, i * this->pageSize,  SEEK_CUR);
             read(fd, newAddr, this->pageSize);
+            
+            //create pagehandle and return
+            MyDB_PageHandle handle = make_shared<MyDB_PageHandleBase>(make_shared<MyDB_Page>(newPage));
+            return handle;
         }
         
         //otherwise evict a page
