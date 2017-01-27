@@ -12,6 +12,14 @@
 MyDB_Page :: MyDB_Page () {
 }
 
+int MyDB_Page :: getLRUPos(){
+    return this->LRUPos;
+}
+
+void MyDB_Page :: incrementLRUPos(){
+    this->LRUPos++;
+}
+
 MyDB_Page :: MyDB_Page(char* addr) {
     this->pageAddress = addr;
 }

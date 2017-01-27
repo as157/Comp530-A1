@@ -59,6 +59,7 @@ private:
     size_t pageSize;
     size_t numPages;
     string tempFile;
+    int LRUCounter;
     
     struct MyHash{
         size_t operator()(const pair<string,long> k)const
@@ -69,9 +70,10 @@ private:
             return res;
         }
     };
-    std::unordered_map<pair<string,int>, shared_ptr<MyDB_Page>, MyHash> pageTable;
-    //shared_ptr<MyDB_Page>* bufferTable;
-    std::queue<char*> bufferQ;
+    unordered_map<pair<string,int>, shared_ptr<MyDB_Page>, MyHash> pageTable;
+    map<int, shared_ptr<MyDB_Page>> LRU;
+    queue<char*> bufferQ;
+    
     //buffer memory
     char* buffer;
 

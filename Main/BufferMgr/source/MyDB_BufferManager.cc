@@ -29,7 +29,7 @@ MyDB_PageHandle MyDB_BufferManager :: getPage (MyDB_TablePtr whichTable, long i)
             
             //create new page and add to pageTable
             MyDB_Page newPage(newAddr);
-            this->pageTable.insert({key, newPage});
+            this->pageTable.insert({key, make_shared<MyDB_Page>(newPage)});
             
             // read data into the buffer at page address
             int fd = open (whichTable->getStorageLoc ().c_str (), O_CREAT|O_RDWR|O_SYNC, 0666);
@@ -50,8 +50,13 @@ MyDB_PageHandle MyDB_BufferManager :: getPage (MyDB_TablePtr whichTable, long i)
     } else {
         // found
         //create new PageHandle and return
-        MyDB_PageHandle handle = make_shared<MyDB_PageHandleBase>(make_shared<MyDB_Page>(it->second));
+        MyDB_PageHandle handle = make_shared<MyDB_PageHandleBase>(it->second);
+        
         //******************increment LRU number
+        auto val = this->LRU.find(it->second->getLRUPos());
+        shared_ptr<MyDB_Page> node = val->second;
+        node->incrementLRUPos();
+        this->LRU.insert({node->getLRUPos(),node});
         
         return handle;
     }
@@ -83,6 +88,7 @@ MyDB_BufferManager :: MyDB_BufferManager (size_t pageSize, size_t numPages, stri
     this->pageSize = pageSize;
     this->numPages = numPages;
     this->tempFile = tempFile;
+    this->LRUCounter = 0;
     
     //create buffer
     this->buffer = (char*) malloc(this->pageSize * this->numPages);

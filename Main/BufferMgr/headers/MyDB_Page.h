@@ -18,6 +18,8 @@ public:
     
     MyDB_Page();
     MyDB_Page(char* addr);
+    int getLRUPos();
+    void incrementLRUPos();
     ~MyDB_Page();
     
     
