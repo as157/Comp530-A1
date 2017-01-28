@@ -63,7 +63,6 @@ private:
     size_t pageSize;
     size_t numPages;
     string tempFile;
-    int LRUCounter;
     
     struct MyHash{
         size_t operator()(const pair<string,long> k)const

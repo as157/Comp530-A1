@@ -132,7 +132,6 @@ MyDB_BufferManager :: MyDB_BufferManager (size_t pageSize, size_t numPages, stri
     this->pageSize = pageSize;
     this->numPages = numPages;
     this->tempFile = tempFile;
-    this->LRUCounter = 0;
     
     //create buffer
     this->buffer = (char*) malloc(this->pageSize * this->numPages);
