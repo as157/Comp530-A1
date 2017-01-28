@@ -34,10 +34,51 @@ void writeSymbols (char *bytes, size_t len, int i) {
 	bytes[len - 1] = 0;
 }
 
+int customTests() {
+    
+    // create a buffer manager
+    MyDB_BufferManager myMgr (64, 16, "tempDSFSD");
+    MyDB_TablePtr table1 = make_shared <MyDB_Table> ("tempTable", "foobar");
+    
+    // allocate a pinned page
+    cout << "\nallocating unpinned page\n";
+    MyDB_PageHandle page = myMgr.getPage (table1, 0);
+    cout << "\nallocating different unpinned page\n";
+    MyDB_PageHandle page0 = myMgr.getPage (table1, 1);
+    cout << "\nallocating the same unpinned page\n";
+    MyDB_PageHandle page1 = myMgr.getPage (table1, 0);
+    
+    vector <MyDB_PageHandle> myHandles;
+    vector <MyDB_PageHandle> temp;
+    for (int i = 0; i < 17; i++) {
+        page = myMgr.getPage (table1, i);
+        if (page == nullptr) {
+            cout << "page " << i << " is null\n";
+        }
+        myHandles.push_back(page);
+    }
+    
+    // Check that we can forget about our pages to remove them from buffer, then make some more
+    myHandles = temp;
+    for (int i = 0; i < 10; i++) {
+        page = myMgr.getPage (table1, i);
+        if (page == nullptr) {
+            cout << "page " << i << " is null\n";
+        }
+        myHandles.push_back(page);
+    }
+    
+    return 0;
+}
+
+
 int main () {
 
 	QUnit::UnitTest qunit(cerr, QUnit::verbose);
     cout<<"BufferQUint launched"<<endl;
+    customTests();
+    
+    return 0;
 
 	// UNIT TEST 1: A BIG ONE!!
 	{
