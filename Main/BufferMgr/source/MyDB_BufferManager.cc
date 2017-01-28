@@ -43,6 +43,10 @@ MyDB_PageHandle MyDB_BufferManager :: getPage (MyDB_TablePtr whichTable, long i)
         
         //otherwise evict a page
         else{
+            // first find node in list that is not pinned
+            Node * evictNode = getNextNode();
+            
+            
             // remove from pageTable. Check dirty bit. If dirty writeback to db table. If not dirty just delete somehow. What happens to any pagehandles in the system that currently reference that page in buffer?
             // if yes create a new page handle and place in pageTable
         }
@@ -52,21 +56,10 @@ MyDB_PageHandle MyDB_BufferManager :: getPage (MyDB_TablePtr whichTable, long i)
         //create new PageHandle and return
         MyDB_PageHandle handle = make_shared<MyDB_PageHandleBase>(it->second);
         
-        //******************increment LRU number
-        // remove node from list
-        Node * previousNode = this->head;
-        Node * currentNode = this->head;
-        while(currentNode != NULL){
-            if(currentNode->pageRef == it->second){
-                previousNode->next = currentNode->next;
-                currentNode->next->prev = previousNode;
-                break;
-            }
-            previousNode = currentNode;
-            currentNode = currentNode->next;
-        }
-        Node newNode(it->second);
-        insertNode(newNode);
+        //******************update priority of node
+        // remove node from list and reinsert at end of list
+        Node * node = removeNode(it->second);
+        insertNode(*node);
         
         return handle;
     }
@@ -79,6 +72,31 @@ MyDB_PageHandle MyDB_BufferManager :: getPage (MyDB_TablePtr whichTable, long i)
 // program.  Typically such a temporary page will be used as buffer memory.
 // since it is just a temp page, it is not associated with any particular
 // table
+
+// get next available node
+Node* MyDB_BufferManager :: getNextNode(){
+    Node * currentNode = this->head;
+    while(currentNode != NULL && currentNode->pageRef->pinned){
+        currentNode = currentNode->next;
+    }
+    return currentNode;
+}
+
+// find and remove node from list
+Node* MyDB_BufferManager :: removeNode(shared_ptr<MyDB_Page> page){
+    Node * previousNode = this->head;
+    Node * currentNode = this->head;
+    while(currentNode != NULL){
+        if(currentNode->pageRef == page){
+            previousNode->next = currentNode->next;
+            currentNode->next->prev = previousNode;
+            return currentNode;
+        }
+        previousNode = currentNode;
+        currentNode = currentNode->next;
+    }
+    return NULL;
+}
 
 // append node to end of list
 void MyDB_BufferManager :: insertNode(Node n){

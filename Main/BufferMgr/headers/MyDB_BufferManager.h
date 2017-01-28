@@ -54,6 +54,8 @@ public:
 
 	// FEEL FREE TO ADD ADDITIONAL PUBLIC METHODS
     void insertNode(Node n);
+    Node * removeNode(shared_ptr<MyDB_Page> page);
+    Node * getNextNode();
 
 private:
 

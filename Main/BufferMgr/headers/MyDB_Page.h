@@ -20,6 +20,7 @@ public:
     MyDB_Page(char* addr);
     int getLRUPos();
     void incrementLRUPos();
+    bool pinned;
     ~MyDB_Page();
     
     
