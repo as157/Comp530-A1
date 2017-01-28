@@ -18,19 +18,18 @@ public:
     
     MyDB_Page();
     MyDB_Page(char* addr);
-    int getLRUPos();
-    void incrementLRUPos();
+    MyDB_TablePtr whichTable;
+    long offset;
+    bool anon;
     bool pinned;
+    bool dirtyBit;
+    int refCount;
+    char* pageAddress;
     ~MyDB_Page();
-    
-    
-    
+
 private:
     
-    int LRUPos;
-    int refCount;
-    int dirtyBit;
-    char* pageAddress;
+    
     
     
 };

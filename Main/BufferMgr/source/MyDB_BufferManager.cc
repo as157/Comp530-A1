@@ -7,6 +7,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <assert.h>
+#include <iostream>
 
 using namespace std;
 
@@ -20,8 +22,8 @@ MyDB_PageHandle MyDB_BufferManager :: getPage (MyDB_TablePtr whichTable, long i)
     auto it = this->pageTable.find(key);
     
     if (it == this->pageTable.end()) {
-        // not found in buffer therefore in DB table
-        //check for availability in buffer
+        // not found in pageTable therefore allocate a new Page
+        // check for availability in buffer
         if(!this->bufferQ.empty()){
             //get available address in buffer
             char* newAddr = this->bufferQ.front();
@@ -35,6 +37,7 @@ MyDB_PageHandle MyDB_BufferManager :: getPage (MyDB_TablePtr whichTable, long i)
             int fd = open (whichTable->getStorageLoc ().c_str (), O_CREAT|O_RDWR|O_SYNC, 0666);
             lseek(fd, i * this->pageSize,  SEEK_CUR);
             read(fd, newAddr, this->pageSize);
+            assert(close(fd));
             
             //create pagehandle and return
             MyDB_PageHandle handle = make_shared<MyDB_PageHandleBase>(make_shared<MyDB_Page>(newPage));
@@ -43,12 +46,38 @@ MyDB_PageHandle MyDB_BufferManager :: getPage (MyDB_TablePtr whichTable, long i)
         
         //otherwise evict a page
         else{
-            // first find node in list that is not pinned
+            // first find node in list that contains page that is not pinned
             Node * evictNode = getNextNode();
             
+            //get reference page and delete node
+            shared_ptr<MyDB_Page> pageRef = evictNode->pageRef;
+            delete evictNode;
             
-            // remove from pageTable. Check dirty bit. If dirty writeback to db table. If not dirty just delete somehow. What happens to any pagehandles in the system that currently reference that page in buffer?
-            // if yes create a new page handle and place in pageTable
+            // check dirty bit. If dirty writeback to db table or tempfile.
+            if(pageRef->dirtyBit == true){
+                if(pageRef->anon == false){
+                    int fd = open (pageRef->whichTable->getStorageLoc ().c_str (), O_CREAT|O_RDWR|O_SYNC, 0666);
+                    lseek(fd, pageRef->offset * this->pageSize,  SEEK_CUR);
+                    write(fd, pageRef->pageAddress, this->pageSize);
+                    assert(close(fd));
+                    
+                    // remove from pageTable
+                    pair<string,long> key(pageRef->whichTable->getName(),pageRef->offset);
+                    pageTable.erase(key);
+                    
+                    //delete page object
+                    pageRef.reset();
+                    
+                }
+                else{
+                    //anonymous page
+                    std::cout<<"this case should never happen inside getPage(table,i)"<<endl;
+                    
+                }
+            }
+            
+            // the destructor of the page object should place the address back in the buffer so this case is handled at the beginning of this function. Therefore call getPage(table, i) again
+            getPage(whichTable, i);
         }
         
     } else {
@@ -56,10 +85,9 @@ MyDB_PageHandle MyDB_BufferManager :: getPage (MyDB_TablePtr whichTable, long i)
         //create new PageHandle and return
         MyDB_PageHandle handle = make_shared<MyDB_PageHandleBase>(it->second);
         
-        //******************update priority of node
-        // remove node from list and reinsert at end of list
+        // remove node from list and reinsert at end of list to update LRU
         Node * node = removeNode(it->second);
-        insertNode(*node);
+        insertNode(node);
         
         return handle;
     }
@@ -67,18 +95,23 @@ MyDB_PageHandle MyDB_BufferManager :: getPage (MyDB_TablePtr whichTable, long i)
     return nullptr;
 }
 
-// gets a temporary page that will no longer exist (1) after the buffer manager
-// has been destroyed, or (2) there are no more references to it anywhere in the
-// program.  Typically such a temporary page will be used as buffer memory.
-// since it is just a temp page, it is not associated with any particular
-// table
-
 // get next available node
 Node* MyDB_BufferManager :: getNextNode(){
     Node * currentNode = this->head;
     while(currentNode != NULL && currentNode->pageRef->pinned){
         currentNode = currentNode->next;
     }
+    if(currentNode == NULL)
+        return NULL;
+    if(currentNode == head){
+        head = currentNode->next;
+        head->prev = NULL;
+    }
+    else{
+        currentNode->prev->next = currentNode->next;
+        currentNode->next->prev = currentNode->prev;
+    }
+    
     return currentNode;
 }
 
@@ -99,20 +132,25 @@ Node* MyDB_BufferManager :: removeNode(shared_ptr<MyDB_Page> page){
 }
 
 // append node to end of list
-void MyDB_BufferManager :: insertNode(Node n){
+void MyDB_BufferManager :: insertNode(Node* n){
     if(this->head == NULL){
-        n.prev = NULL;
-        n.next = NULL;
-        this->head = &n;
+        n->prev = NULL;
+        n->next = NULL;
+        this->head = n;
     }
     else{
-        n.next = NULL;
-        n.prev = this->end;
-        this->end->next = &n;
-        this->end = &n;
+        n->next = NULL;
+        n->prev = this->end;
+        this->end->next = n;
+        this->end = n;
     }
 }
 
+// gets a temporary page that will no longer exist (1) after the buffer manager
+// has been destroyed, or (2) there are no more references to it anywhere in the
+// program.  Typically such a temporary page will be used as buffer memory.
+// since it is just a temp page, it is not associated with any particular
+// table
 MyDB_PageHandle MyDB_BufferManager :: getPage () {
 	return nullptr;		
 }

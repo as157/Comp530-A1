@@ -53,7 +53,7 @@ public:
 	~MyDB_BufferManager ();
 
 	// FEEL FREE TO ADD ADDITIONAL PUBLIC METHODS
-    void insertNode(Node n);
+    void insertNode(Node * n);
     Node * removeNode(shared_ptr<MyDB_Page> page);
     Node * getNextNode();
 
