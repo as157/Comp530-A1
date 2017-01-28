@@ -53,10 +53,20 @@ MyDB_PageHandle MyDB_BufferManager :: getPage (MyDB_TablePtr whichTable, long i)
         MyDB_PageHandle handle = make_shared<MyDB_PageHandleBase>(it->second);
         
         //******************increment LRU number
-        auto val = this->LRU.find(it->second->getLRUPos());
-        shared_ptr<MyDB_Page> node = val->second;
-        node->incrementLRUPos();
-        this->LRU.insert({node->getLRUPos(),node});
+        // remove node from list
+        Node * previousNode = this->head;
+        Node * currentNode = this->head;
+        while(currentNode != NULL){
+            if(currentNode->pageRef == it->second){
+                previousNode->next = currentNode->next;
+                currentNode->next->prev = previousNode;
+                break;
+            }
+            previousNode = currentNode;
+            currentNode = currentNode->next;
+        }
+        Node newNode(it->second);
+        insertNode(newNode);
         
         return handle;
     }
@@ -69,6 +79,22 @@ MyDB_PageHandle MyDB_BufferManager :: getPage (MyDB_TablePtr whichTable, long i)
 // program.  Typically such a temporary page will be used as buffer memory.
 // since it is just a temp page, it is not associated with any particular
 // table
+
+// append node to end of list
+void MyDB_BufferManager :: insertNode(Node n){
+    if(this->head == NULL){
+        n.prev = NULL;
+        n.next = NULL;
+        this->head = &n;
+    }
+    else{
+        n.next = NULL;
+        n.prev = this->end;
+        this->end->next = &n;
+        this->end = &n;
+    }
+}
+
 MyDB_PageHandle MyDB_BufferManager :: getPage () {
 	return nullptr;		
 }
@@ -97,6 +123,12 @@ MyDB_BufferManager :: MyDB_BufferManager (size_t pageSize, size_t numPages, stri
     for(int i = 0; i < numPages; i++){
         this->bufferQ.push((this->buffer + i*this->pageSize));
     }
+    
+    //initialize linked list
+    this->head->prev = NULL;
+    this->head->next = NULL;
+    this->head = NULL;
+    this->end = this->head;
     
 }
 

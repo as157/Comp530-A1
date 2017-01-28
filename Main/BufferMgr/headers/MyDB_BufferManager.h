@@ -8,6 +8,7 @@
 #include <map>
 #include <unordered_map>
 #include <queue>
+#include "Node.h"
 
 using namespace std;
 
@@ -51,7 +52,8 @@ public:
 	// and any temporary files need to be deleted
 	~MyDB_BufferManager ();
 
-	// FEEL FREE TO ADD ADDITIONAL PUBLIC METHODS 
+	// FEEL FREE TO ADD ADDITIONAL PUBLIC METHODS
+    void insertNode(Node n);
 
 private:
 
@@ -73,6 +75,8 @@ private:
     unordered_map<pair<string,int>, shared_ptr<MyDB_Page>, MyHash> pageTable;
     map<int, shared_ptr<MyDB_Page>> LRU;
     queue<char*> bufferQ;
+    Node * head;
+    Node * end;
     
     //buffer memory
     char* buffer;

@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXFileReference section */
+		B00227261E3BF7F600953887 /* headers */ = {isa = PBXFileReference; lastKnownFileType = folder; name = headers; path = ../Main/BufferMgr/headers; sourceTree = "<group>"; };
+		B00227271E3BF80F00953887 /* Node.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Node.h; path = ../Main/BufferMgr/headers/Node.h; sourceTree = "<group>"; };
+		B00227281E3BF84500953887 /* Node.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Node.cpp; path = ../Main/BufferMgr/Node.cpp; sourceTree = "<group>"; };
+		B00227291E3BF84500953887 /* Node.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = Node.hpp; path = ../Main/BufferMgr/Node.hpp; sourceTree = "<group>"; };
 		B0263B3B1E3524D500FCDB31 /* Main */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Main; path = ../Main; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -14,6 +18,10 @@
 		B0263B301E3523F300FCDB31 = {
 			isa = PBXGroup;
 			children = (
+				B00227281E3BF84500953887 /* Node.cpp */,
+				B00227291E3BF84500953887 /* Node.hpp */,
+				B00227271E3BF80F00953887 /* Node.h */,
+				B00227261E3BF7F600953887 /* headers */,
 				B0263B3B1E3524D500FCDB31 /* Main */,
 			);
 			sourceTree = "<group>";
