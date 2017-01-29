@@ -9,7 +9,7 @@
 #include <unordered_map>
 #include <queue>
 #include "Node.h"
-
+//class MyDB_Page;
 using namespace std;
 
 class MyDB_BufferManager {
@@ -56,6 +56,7 @@ public:
     void insertNode(Node * n);
     Node * removeNode(shared_ptr<MyDB_Page> page);
     Node * getNextNode();
+    void deletePage(char* addr, pair<string,int> key);
 
 private:
 

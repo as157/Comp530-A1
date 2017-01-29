@@ -61,10 +61,6 @@ MyDB_PageHandle MyDB_BufferManager :: getPage (MyDB_TablePtr whichTable, long i)
                     write(fd, pageRef->pageAddress, this->pageSize);
                     assert(close(fd));
                     
-                    // remove from pageTable
-                    pair<string,long> key(pageRef->whichTable->getName(),pageRef->offset);
-                    pageTable.erase(key);
-                    
                     //delete page object
                     pageRef.reset();
                     
@@ -146,6 +142,11 @@ void MyDB_BufferManager :: insertNode(Node* n){
     }
 }
 
+void MyDB_BufferManager :: deletePage(char* addr, pair<string,int> key){
+    this->bufferQ.push(addr);
+    this->pageTable.erase(key);
+}
+
 // gets a temporary page that will no longer exist (1) after the buffer manager
 // has been destroyed, or (2) there are no more references to it anywhere in the
 // program.  Typically such a temporary page will be used as buffer memory.
@@ -189,7 +190,14 @@ MyDB_BufferManager :: MyDB_BufferManager (size_t pageSize, size_t numPages, stri
 
 MyDB_BufferManager :: ~MyDB_BufferManager () {
 }
-	
+
+MyDB_Page :: ~MyDB_Page () {
+    pair<string,long> key(this->whichTable->getName(),this->offset);
+    char* temp = NULL;
+    
+    this->bufferManagerRef->deletePage(temp, key);
+}
+
 #endif
 
 

@@ -9,6 +9,8 @@
 #ifndef MyDB_Page_h
 #define MyDB_Page_h
 #include "MyDB_Table.h"
+class MyDB_BufferManager;
+//#include "MyDB_BufferManager.h"
 
 using namespace std;
 
@@ -25,12 +27,9 @@ public:
     bool dirtyBit;
     int refCount;
     char* pageAddress;
+    shared_ptr<MyDB_BufferManager>  bufferManagerRef;
     ~MyDB_Page();
-
-private:
-    
-    
-    
+    //Node * temp;
     
 };
 

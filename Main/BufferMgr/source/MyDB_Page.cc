@@ -8,22 +8,21 @@
 
 #include <stdio.h>
 #include "MyDB_Page.h"
+//class MyDB_BufferManager;
 
-MyDB_Page :: MyDB_Page () {
-}
-
-int MyDB_Page :: getLRUPos(){
-    return this->LRUPos;
-}
-
-void MyDB_Page :: incrementLRUPos(){
-    this->LRUPos++;
-}
+//MyDB_Page :: MyDB_Page () {
+//    this->bufferManagerRef = NULL;
+//    this->bufferManagerRef->getPage();
+//}
 
 MyDB_Page :: MyDB_Page(char* addr) {
     this->pageAddress = addr;
 }
 
-MyDB_Page :: ~MyDB_Page () {
-}
+//MyDB_Page :: ~MyDB_Page () {
+//    pair<string,long> key(this->whichTable->getName(),this->offset);
+//    char* temp = NULL;
+    
+//    this->bufferManagerRef->deletePage(temp, key);
+//}
 
