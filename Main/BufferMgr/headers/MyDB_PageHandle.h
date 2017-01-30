@@ -36,11 +36,12 @@ public:
 
 	// FEEL FREE TO ADD ADDITIONAL PUBLIC METHODS
     MyDB_PageHandleBase(shared_ptr<MyDB_Page>);
+    shared_ptr<MyDB_Page> pagePtr;
 
 private:
 
 	// YOUR CODE HERE
-    shared_ptr<MyDB_Page> pagePtr;
+    
     
 };
 

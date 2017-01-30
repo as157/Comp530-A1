@@ -10,10 +10,9 @@
 #include "MyDB_Page.h"
 //class MyDB_BufferManager;
 
-//MyDB_Page :: MyDB_Page () {
-//    this->bufferManagerRef = NULL;
-//    this->bufferManagerRef->getPage();
-//}
+MyDB_Page :: MyDB_Page () {
+    //this->bufferManagerRef = NULL;
+}
 
 MyDB_Page :: MyDB_Page(char* addr) {
     this->pageAddress = addr;

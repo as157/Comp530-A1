@@ -29,7 +29,6 @@ public:
     char* pageAddress;
     shared_ptr<MyDB_BufferManager>  bufferManagerRef;
     ~MyDB_Page();
-    //Node * temp;
     
 };
 

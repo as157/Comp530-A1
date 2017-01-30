@@ -57,6 +57,7 @@ public:
     Node * removeNode(shared_ptr<MyDB_Page> page);
     Node * getNextNode();
     void deletePage(char* addr, pair<string,int> key);
+    void evictNode();
 
 private:
 
@@ -75,7 +76,7 @@ private:
         }
     };
     unordered_map<pair<string,int>, shared_ptr<MyDB_Page>, MyHash> pageTable;
-    map<int, shared_ptr<MyDB_Page>> LRU;
+    //map<int, shared_ptr<MyDB_Page>> LRU;
     queue<char*> bufferQ;
     Node * head;
     Node * end;

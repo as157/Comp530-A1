@@ -46,32 +46,7 @@ MyDB_PageHandle MyDB_BufferManager :: getPage (MyDB_TablePtr whichTable, long i)
         
         //otherwise evict a page
         else{
-            // first find node in list that contains page that is not pinned
-            Node * evictNode = getNextNode();
-            
-            //get reference page and delete node
-            shared_ptr<MyDB_Page> pageRef = evictNode->pageRef;
-            delete evictNode;
-            
-            // check dirty bit. If dirty writeback to db table or tempfile.
-            if(pageRef->dirtyBit == true){
-                if(pageRef->anon == false){
-                    int fd = open (pageRef->whichTable->getStorageLoc ().c_str (), O_CREAT|O_RDWR|O_SYNC, 0666);
-                    lseek(fd, pageRef->offset * this->pageSize,  SEEK_CUR);
-                    write(fd, pageRef->pageAddress, this->pageSize);
-                    assert(close(fd));
-                    
-                    //delete page object
-                    pageRef.reset();
-                    
-                }
-                else{
-                    //anonymous page
-                    std::cout<<"this case should never happen inside getPage(table,i)"<<endl;
-                    
-                }
-            }
-            
+            evictNode();
             // the destructor of the page object should place the address back in the buffer so this case is handled at the beginning of this function. Therefore call getPage(table, i) again
             getPage(whichTable, i);
         }
@@ -89,6 +64,34 @@ MyDB_PageHandle MyDB_BufferManager :: getPage (MyDB_TablePtr whichTable, long i)
     }
     
     return nullptr;
+}
+
+void MyDB_BufferManager :: evictNode(){
+    // first find node in list that contains page that is not pinned
+    Node * evictNode = getNextNode();
+    
+    //get reference page and delete node
+    shared_ptr<MyDB_Page> pageRef = evictNode->pageRef;
+    delete evictNode;
+    
+    // check dirty bit. If dirty writeback to db table or tempfile.
+    if(pageRef->dirtyBit == true){
+        if(pageRef->anon == false){
+            int fd = open (pageRef->whichTable->getStorageLoc ().c_str (), O_CREAT|O_RDWR|O_SYNC, 0666);
+            lseek(fd, pageRef->offset * this->pageSize,  SEEK_CUR);
+            write(fd, pageRef->pageAddress, this->pageSize);
+            assert(close(fd));
+            
+            //delete page object
+            pageRef.reset();
+            
+        }
+        else{
+            //anonymous page
+            std::cout<<"this case should never happen inside getPage(table,i)"<<endl;
+            
+        }
+    }
 }
 
 // get next available node
@@ -129,10 +132,13 @@ Node* MyDB_BufferManager :: removeNode(shared_ptr<MyDB_Page> page){
 
 // append node to end of list
 void MyDB_BufferManager :: insertNode(Node* n){
+    if(n == NULL)
+        return;
     if(this->head == NULL){
         n->prev = NULL;
         n->next = NULL;
         this->head = n;
+        this->end = n;
     }
     else{
         n->next = NULL;
@@ -153,7 +159,8 @@ void MyDB_BufferManager :: deletePage(char* addr, pair<string,int> key){
 // since it is just a temp page, it is not associated with any particular
 // table
 MyDB_PageHandle MyDB_BufferManager :: getPage () {
-	return nullptr;		
+	
+    return nullptr;
 }
 
 MyDB_PageHandle MyDB_BufferManager :: getPinnedPage (MyDB_TablePtr, long) {
@@ -165,6 +172,8 @@ MyDB_PageHandle MyDB_BufferManager :: getPinnedPage () {
 }
 
 void MyDB_BufferManager :: unpin (MyDB_PageHandle unpinMe) {
+    //page should already be in LRU linked list but need to change flag on page object
+    unpinMe->pagePtr->pinned = false;
 }
 
 MyDB_BufferManager :: MyDB_BufferManager (size_t pageSize, size_t numPages, string tempFile) {
@@ -193,9 +202,8 @@ MyDB_BufferManager :: ~MyDB_BufferManager () {
 
 MyDB_Page :: ~MyDB_Page () {
     pair<string,long> key(this->whichTable->getName(),this->offset);
-    char* temp = NULL;
-    
-    this->bufferManagerRef->deletePage(temp, key);
+    this->bufferManagerRef->deletePage(this->pageAddress, key);
+    delete this->pageAddress;
 }
 
 #endif
