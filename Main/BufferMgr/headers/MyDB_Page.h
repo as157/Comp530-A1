@@ -17,17 +17,31 @@ using namespace std;
 class MyDB_Page{
     
 public:
+    //should always be constructed with parameters
+    MyDB_Page(char* addr, MyDB_BufferManager * bfRef, bool pinned, bool anon, MyDB_TablePtr whichTable, long i) ;
     
-    MyDB_Page();
-    MyDB_Page(char* addr);
+    //memory address in buffer memory
+    char* pageAddress;
+    
+    //reference back to buffer manager. Required to alert buffer manager when destructed
+    MyDB_BufferManager *  bufferManagerRef;
+    
+    //pinned in buffer, default = false
+    bool pinned;
+    
+    //anonymous page = true or one associated with DB table = false
+    bool anon;
+
+    //associated DB table, if annonymous = null
     MyDB_TablePtr whichTable;
     long offset;
-    bool anon;
-    bool pinned;
+ 
+    //is page in buffer dirty, default = false
     bool dirtyBit;
+    
+    //increments when pageHandle method getBytes(), wroteBytes() is called; default = 0
     int refCount;
-    char* pageAddress;
-    shared_ptr<MyDB_BufferManager>  bufferManagerRef;
+    
     ~MyDB_Page();
     
 };

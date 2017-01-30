@@ -10,12 +10,17 @@
 #include "MyDB_Page.h"
 //class MyDB_BufferManager;
 
-MyDB_Page :: MyDB_Page () {
-    //this->bufferManagerRef = NULL;
-}
 
-MyDB_Page :: MyDB_Page(char* addr) {
+MyDB_Page :: MyDB_Page(char* addr, MyDB_BufferManager * bfRef, bool pinned, bool anon, MyDB_TablePtr whichTable, long i) {
     this->pageAddress = addr;
+    this->bufferManagerRef = bfRef;
+    this->pinned = pinned;
+    this->anon = anon;
+    this->whichTable = whichTable;
+    this->offset = i;
+    this->dirtyBit = false;
+    this->refCount = 0;
+    
 }
 
 //MyDB_Page :: ~MyDB_Page () {

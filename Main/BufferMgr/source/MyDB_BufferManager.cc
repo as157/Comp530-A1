@@ -23,21 +23,19 @@ MyDB_PageHandle MyDB_BufferManager :: getPage (MyDB_TablePtr whichTable, long i)
     
     if (it == this->pageTable.end()) {
         // not found in pageTable therefore allocate a new Page
-        // check for availability in buffer
+        // check for availability in address buffer
         if(!this->bufferQ.empty()){
             //get available address in buffer
-            char* newAddr = this->bufferQ.front();
-            this->bufferQ.pop();
+            char * newAddr = getNewBufferAddress();
             
-            //create new page and add to pageTable
-            MyDB_Page newPage(newAddr);
+            //create new page and set fields
+            MyDB_Page newPage(newAddr, this, false, false, whichTable, i);
+            
+            //add to pageTable
             this->pageTable.insert({key, make_shared<MyDB_Page>(newPage)});
             
             // read data into the buffer at page address
-            int fd = open (whichTable->getStorageLoc ().c_str (), O_CREAT|O_RDWR|O_SYNC, 0666);
-            lseek(fd, i * this->pageSize,  SEEK_CUR);
-            read(fd, newAddr, this->pageSize);
-            assert(close(fd));
+            readDataIntoBuffer(newAddr, whichTable, i);
             
             //create pagehandle and return
             MyDB_PageHandle handle = make_shared<MyDB_PageHandleBase>(make_shared<MyDB_Page>(newPage));
@@ -48,7 +46,7 @@ MyDB_PageHandle MyDB_BufferManager :: getPage (MyDB_TablePtr whichTable, long i)
         else{
             evictNode();
             // the destructor of the page object should place the address back in the buffer so this case is handled at the beginning of this function. Therefore call getPage(table, i) again
-            getPage(whichTable, i);
+            return getPage(whichTable, i);
         }
         
     } else {
@@ -66,9 +64,27 @@ MyDB_PageHandle MyDB_BufferManager :: getPage (MyDB_TablePtr whichTable, long i)
     return nullptr;
 }
 
-void MyDB_BufferManager :: evictNode(){
+
+
+char* MyDB_BufferManager :: getNewBufferAddress(){
+    char* newAddr = this->bufferQ.front();
+    this->bufferQ.pop();
+    return newAddr;
+}
+
+void MyDB_BufferManager :: readDataIntoBuffer(char* addr, MyDB_TablePtr whichTable, long i){
+    int fd = open (whichTable->getStorageLoc ().c_str (), O_CREAT|O_RDWR|O_SYNC, 0666);
+    lseek(fd, i * this->pageSize,  SEEK_CUR);
+    read(fd, addr, this->pageSize);
+    assert(close(fd));
+}
+
+bool MyDB_BufferManager :: evictNode(){
     // first find node in list that contains page that is not pinned
     Node * evictNode = getNextNode();
+    
+    if(evictNode == NULL)
+        return false;
     
     //get reference page and delete node
     shared_ptr<MyDB_Page> pageRef = evictNode->pageRef;
@@ -81,17 +97,21 @@ void MyDB_BufferManager :: evictNode(){
             lseek(fd, pageRef->offset * this->pageSize,  SEEK_CUR);
             write(fd, pageRef->pageAddress, this->pageSize);
             assert(close(fd));
-            
-            //delete page object
-            pageRef.reset();
-            
         }
         else{
-            //anonymous page
-            std::cout<<"this case should never happen inside getPage(table,i)"<<endl;
-            
+            //anonymous page so write back to tempFile
+            int fd = open (this->tempFile.c_str (), O_CREAT|O_RDWR|O_SYNC, 0666);
+            lseek(fd, this->tempFileOffset * this->pageSize,  SEEK_CUR);
+            write(fd, pageRef->pageAddress, this->pageSize);
+            assert(close(fd));
         }
+        
     }
+    
+    //delete page object
+    pageRef.reset();
+    
+    return true;
 }
 
 // get next available node
@@ -159,16 +179,96 @@ void MyDB_BufferManager :: deletePage(char* addr, pair<string,int> key){
 // since it is just a temp page, it is not associated with any particular
 // table
 MyDB_PageHandle MyDB_BufferManager :: getPage () {
-	
+	//get new page from bufferQ
+    if(!this->bufferQ.empty()){
+        //get available address in buffer
+        char * newAddr = getNewBufferAddress();
+        
+        //create new page and set fields
+        MyDB_Page newPage(newAddr, this, false, false, NULL, NULL);
+        
+        //create pagehandle and return
+        MyDB_PageHandle handle = make_shared<MyDB_PageHandleBase>(make_shared<MyDB_Page>(newPage));
+        return handle;
+        
+    }
+    //evict a current page in buffer
+    else{
+        evictNode();
+        // the destructor of the page object should place the address back in the buffer so this case is handled at the beginning of this function. Therefore call getPage(table, i) again
+        return getPage();
+    }
     return nullptr;
 }
 
-MyDB_PageHandle MyDB_BufferManager :: getPinnedPage (MyDB_TablePtr, long) {
-	return nullptr;		
+MyDB_PageHandle MyDB_BufferManager :: getPinnedPage (MyDB_TablePtr whichTable, long i) {
+    //is pinned page currently in the buffer?
+    pair<string,long> key(whichTable->getName(),i);
+    auto it = this->pageTable.find(key);
+    
+    if (it == this->pageTable.end()) {
+        // not found in pageTable therefore allocate a new Page
+        // check for availability in address buffer
+        if(!this->bufferQ.empty()){
+            //get available address in buffer
+            char * newAddr = getNewBufferAddress();
+            
+            //create new page and set fields
+            MyDB_Page newPage(newAddr, this, true, false, whichTable, i);
+            
+            //add to pageTable
+            this->pageTable.insert({key, make_shared<MyDB_Page>(newPage)});
+            
+            // read data into the buffer at page address
+            readDataIntoBuffer(newAddr, whichTable, i);
+            
+            //create pagehandle and return
+            MyDB_PageHandle handle = make_shared<MyDB_PageHandleBase>(make_shared<MyDB_Page>(newPage));
+            return handle;
+        }
+        
+        //otherwise evict a page
+        else{
+            evictNode();
+            // the destructor of the page object should place the address back in the buffer so this case is handled at the beginning of this function. Therefore call getPage(table, i) again
+            return getPinnedPage(whichTable, i);
+        }
+        
+    } else {
+        // found
+        //create new PageHandle and return
+        MyDB_PageHandle handle = make_shared<MyDB_PageHandleBase>(it->second);
+        
+        // remove node from list and reinsert at end of list to update LRU
+        Node * node = removeNode(it->second);
+        insertNode(node);
+        
+        return handle;
+    }
+    return nullptr;
 }
 
 MyDB_PageHandle MyDB_BufferManager :: getPinnedPage () {
-	return nullptr;		
+    //get new page from bufferQ
+    if(!this->bufferQ.empty()){
+        //get available address in buffer
+        char * newAddr = getNewBufferAddress();
+        
+        //create new page and set fields
+        MyDB_Page newPage(newAddr, this, true, false, NULL, NULL);
+        
+        //create pagehandle and return
+        MyDB_PageHandle handle = make_shared<MyDB_PageHandleBase>(make_shared<MyDB_Page>(newPage));
+        return handle;
+        
+    }
+    //evict a current page in buffer
+    else{
+        evictNode();
+        // the destructor of the page object should place the address back in the buffer so this case is handled at the beginning of this function. Therefore call getPage(table, i) again
+        return getPage();
+    }
+    return nullptr;
 }
 
 void MyDB_BufferManager :: unpin (MyDB_PageHandle unpinMe) {
@@ -180,6 +280,7 @@ MyDB_BufferManager :: MyDB_BufferManager (size_t pageSize, size_t numPages, stri
     this->pageSize = pageSize;
     this->numPages = numPages;
     this->tempFile = tempFile;
+    
     
     //create buffer
     this->buffer = (char*) malloc(this->pageSize * this->numPages);
@@ -198,12 +299,31 @@ MyDB_BufferManager :: MyDB_BufferManager (size_t pageSize, size_t numPages, stri
 }
 
 MyDB_BufferManager :: ~MyDB_BufferManager () {
+    //first unpin all pages in buffer
+    Node * currentNode = head;
+    while(currentNode != NULL){
+        currentNode->pageRef->pinned = false;
+        currentNode = currentNode->next;
+    }
+    
+    //next evict all pages
+    while(evictNode());
+    
+    //delete temp files
+    
+    //cleanup
+    while(!this->bufferQ.empty()){
+        this->bufferQ.pop();
+    }
+    free(this->buffer);
+    
 }
 
 MyDB_Page :: ~MyDB_Page () {
     pair<string,long> key(this->whichTable->getName(),this->offset);
     this->bufferManagerRef->deletePage(this->pageAddress, key);
     delete this->pageAddress;
+    delete this->bufferManagerRef;
 }
 
 #endif

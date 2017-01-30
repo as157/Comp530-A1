@@ -57,7 +57,9 @@ public:
     Node * removeNode(shared_ptr<MyDB_Page> page);
     Node * getNextNode();
     void deletePage(char* addr, pair<string,int> key);
-    void evictNode();
+    bool evictNode();
+    char * getNewBufferAddress();
+    void readDataIntoBuffer(char* addr, MyDB_TablePtr whichTable, long i);
 
 private:
 
@@ -65,6 +67,7 @@ private:
     size_t pageSize;
     size_t numPages;
     string tempFile;
+    int tempFileOffset;
     
     struct MyHash{
         size_t operator()(const pair<string,long> k)const
