@@ -76,9 +76,9 @@ int main () {
 
 	QUnit::UnitTest qunit(cerr, QUnit::verbose);
     cout<<"BufferQUint launched"<<endl;
-    customTests();
+    //customTests();
     
-    return 0;
+    //return 0;
 
 	// UNIT TEST 1: A BIG ONE!!
 	{

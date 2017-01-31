@@ -42,7 +42,12 @@ public:
     //increments when pageHandle method getBytes(), wroteBytes() is called; default = 0
     int refCount;
     
+    //flag to indicate if in buffer; default = true
+    bool inBuffer;
+    
     ~MyDB_Page();
+    
+    void updateLRU(shared_ptr<MyDB_Page> pagePtr);
     
 };
 

@@ -6,10 +6,17 @@
 #include "MyDB_PageHandle.h"
 
 void *MyDB_PageHandleBase :: getBytes () {
-	return nullptr;
+	//check if data is in buffer
+    //if(this->pagePtr->inBuffer != true){
+    //}
+    //return pointer to data in buffer
+    this->pagePtr->updateLRU(this->pagePtr);
+    return this->pagePtr->pageAddress;
 }
 
 void MyDB_PageHandleBase :: wroteBytes () {
+    this->pagePtr->dirtyBit = true;
+    this->pagePtr->updateLRU(this->pagePtr);
 }
 
 MyDB_PageHandleBase :: MyDB_PageHandleBase (shared_ptr<MyDB_Page> page) {
@@ -17,6 +24,12 @@ MyDB_PageHandleBase :: MyDB_PageHandleBase (shared_ptr<MyDB_Page> page) {
 }
 
 MyDB_PageHandleBase :: ~MyDB_PageHandleBase () {
+    if(this->pagePtr->pinned){
+        if(this->pagePtr->refCount <= 0)
+            this->pagePtr->pinned = false;
+        else
+            this->pagePtr->refCount--;
+    }
 }
 
 #endif

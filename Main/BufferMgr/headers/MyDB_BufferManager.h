@@ -60,6 +60,8 @@ public:
     bool evictNode();
     char * getNewBufferAddress();
     void readDataIntoBuffer(char* addr, MyDB_TablePtr whichTable, long i);
+    void updateLRU(shared_ptr<MyDB_Page> pg);
+    void addAddressToBufferQ(char* addr);
 
 private:
 
