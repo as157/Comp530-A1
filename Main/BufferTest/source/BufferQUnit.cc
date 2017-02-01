@@ -36,37 +36,27 @@ void writeSymbols (char *bytes, size_t len, int i) {
 
 int customTests() {
     
-    // create a buffer manager
-    MyDB_BufferManager myMgr (64, 16, "tempDSFSD");
+    // create a buffer manager of size 1
+    MyDB_BufferManager myMgr (64, 1, "tempDSFSD");
     MyDB_TablePtr table1 = make_shared <MyDB_Table> ("tempTable", "foobar");
     
-    // allocate a pinned page
-    cout << "\nallocating unpinned page\n";
-    MyDB_PageHandle page = myMgr.getPage (table1, 0);
-    cout << "\nallocating different unpinned page\n";
-    MyDB_PageHandle page0 = myMgr.getPage (table1, 1);
-    cout << "\nallocating the same unpinned page\n";
-    MyDB_PageHandle page1 = myMgr.getPage (table1, 0);
+    // allocate two pages which should evict page0
+    MyDB_PageHandle page0 = myMgr.getPage(table1, 0);
+    std::cout<<(char*)page0->getBytes()<<endl;
     
-    vector <MyDB_PageHandle> myHandles;
-    vector <MyDB_PageHandle> temp;
-    for (int i = 0; i < 17; i++) {
-        page = myMgr.getPage (table1, i);
-        if (page == nullptr) {
-            cout << "page " << i << " is null\n";
-        }
-        myHandles.push_back(page);
-    }
+    MyDB_PageHandle page1 = myMgr.getPage (table1, 1);
+    std::cout<<(char*)page1->getBytes()<<endl;
+    writeSymbols ((char*)page1->getBytes(), 64, 6);
+    page1->wroteBytes();
+    std::cout<<(char*)page1->getBytes()<<endl;
+
     
-    // Check that we can forget about our pages to remove them from buffer, then make some more
-    myHandles = temp;
-    for (int i = 0; i < 10; i++) {
-        page = myMgr.getPage (table1, i);
-        if (page == nullptr) {
-            cout << "page " << i << " is null\n";
-        }
-        myHandles.push_back(page);
-    }
+    //call getBytes on page0
+    char *bytes = (char *)page0->getBytes();
+    std::cout<<(char*)page0->getBytes()<<endl;
+    std::cout<<(char*)page1->getBytes()<<endl;
+    //compare
+    //QUNIT_IS_EQUAL (string (answer), string (bytes));
     
     return 0;
 }
@@ -76,7 +66,7 @@ int main () {
 
 	QUnit::UnitTest qunit(cerr, QUnit::verbose);
     cout<<"BufferQUint launched"<<endl;
-    //customTests();
+    customTests();
     
     //return 0;
 

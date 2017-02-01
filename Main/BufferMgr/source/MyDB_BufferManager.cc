@@ -234,15 +234,20 @@ Node* MyDB_BufferManager :: getNextNode(){
     }
     if(currentNode == NULL)
         return NULL;
-    if(currentNode == head){
-        head = currentNode->next;
-        if(head != NULL)
-            head->prev = NULL;
+    if(currentNode == this->head){
+        this->head = currentNode->next;
+        if(this->head != NULL)
+            this->head->prev = NULL;
+        else
+            this->end = NULL;
     }
     else{
         currentNode->prev->next = currentNode->next;
         if(currentNode->next != NULL)
             currentNode->next->prev = currentNode->prev;
+        else{
+            this->end = currentNode->prev;
+        }
     }
     
     return currentNode;
