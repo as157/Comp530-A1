@@ -8,6 +8,6 @@
 
 #include "Node.h"
 
-Node::Node(shared_ptr<MyDB_Page> page){
+Node::Node(MyDB_Page * page){
     this->pageRef = page;
 }

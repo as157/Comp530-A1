@@ -18,6 +18,6 @@ class Node{
 public:
     Node * prev;
     Node * next;
-    shared_ptr<MyDB_Page> pageRef;
-    Node(shared_ptr<MyDB_Page> page);
+    MyDB_Page * pageRef;
+    Node(MyDB_Page * page);
 };

@@ -29,16 +29,17 @@ MyDB_PageHandle MyDB_BufferManager :: getPage (MyDB_TablePtr whichTable, long i)
             char * newAddr = getNewBufferAddress();
             
             //create new page and set fields
-            //MyDB_Page newPage(newAddr, this, false, false, whichTable, i);
+            //MyDB_Page newPage(newAddr, this, true, false, whichTable, i);
             
-            //add to pageTable
-            this->pageTable.insert({key, make_shared<MyDB_Page>(newAddr, this, true, false, whichTable, i)});
+            //add to pageTable and insert in LRU linked list
+            this->pageTable.insert({key, new MyDB_Page(newAddr, this, false, false, whichTable, i)});
+            insertNode(new Node(this->pageTable[key]));
             
             // read data into the buffer at page address
             readDataIntoBuffer(newAddr, whichTable, i);
             
             //create pagehandle and return
-            MyDB_PageHandle handle = make_shared<MyDB_PageHandleBase>(make_shared<MyDB_Page>(*pageTable[key]));
+            MyDB_PageHandle handle = make_shared<MyDB_PageHandleBase>(this->pageTable[key]);
             return handle;
         }
         
@@ -66,129 +67,13 @@ MyDB_PageHandle MyDB_BufferManager :: getPage (MyDB_TablePtr whichTable, long i)
     return nullptr;
 }
 
-
-
-char* MyDB_BufferManager :: getNewBufferAddress(){
-    char* newAddr = this->bufferQ.front();
-    this->bufferQ.pop();
-    return newAddr;
-}
-
-// remove node from list and reinsert at end of list to update LRU
-void MyDB_BufferManager :: updateLRU(shared_ptr<MyDB_Page> pg){
-    Node * node = removeNode(pg);
-    insertNode(node);
-}
-
-void MyDB_BufferManager :: readDataIntoBuffer(char* addr, MyDB_TablePtr whichTable, long i){
-    int fd = open (whichTable->getStorageLoc ().c_str (), O_CREAT|O_RDWR|O_SYNC, 0666);
-    lseek(fd, i * this->pageSize,  SEEK_CUR);
-    read(fd, addr, this->pageSize);
-    cout<<close(fd);
-    //assert(close(fd));
-}
-
-bool MyDB_BufferManager :: evictNode(){
-    // first find node in list that contains page that is not pinned
-    Node * evictNode = getNextNode();
-    
-    if(evictNode == NULL)
-        return false;
-    
-    //get reference page and delete node
-    shared_ptr<MyDB_Page> pageRef = evictNode->pageRef;
-    delete evictNode;
-    
-    // check dirty bit. If dirty writeback to db table or tempfile.
-    if(pageRef->dirtyBit == true){
-        if(pageRef->anon == false){
-            int fd = open (pageRef->whichTable->getStorageLoc ().c_str (), O_CREAT|O_RDWR|O_SYNC, 0666);
-            lseek(fd, pageRef->offset * this->pageSize,  SEEK_CUR);
-            write(fd, pageRef->pageAddress, this->pageSize);
-            assert(close(fd));
-        }
-        else{
-            //anonymous page so write back to tempFile
-            int fd = open (this->tempFile.c_str (), O_CREAT|O_RDWR|O_SYNC, 0666);
-            lseek(fd, this->tempFileOffset * this->pageSize,  SEEK_CUR);
-            write(fd, pageRef->pageAddress, this->pageSize);
-            assert(close(fd));
-        }
-        
-    }
-    
-    //delete page object
-    pageRef.reset();
-    
-    return true;
-}
-
-// get next available node
-Node* MyDB_BufferManager :: getNextNode(){
-    Node * currentNode = this->head;
-    while(currentNode != NULL && currentNode->pageRef->pinned){
-        currentNode = currentNode->next;
-    }
-    if(currentNode == NULL)
-        return NULL;
-    if(currentNode == head){
-        head = currentNode->next;
-        head->prev = NULL;
-    }
-    else{
-        currentNode->prev->next = currentNode->next;
-        currentNode->next->prev = currentNode->prev;
-    }
-    
-    return currentNode;
-}
-
-// find and remove node from list
-Node* MyDB_BufferManager :: removeNode(shared_ptr<MyDB_Page> page){
-    Node * previousNode = this->head;
-    Node * currentNode = this->head;
-    while(currentNode != NULL){
-        if(currentNode->pageRef == page){
-            previousNode->next = currentNode->next;
-            currentNode->next->prev = previousNode;
-            return currentNode;
-        }
-        previousNode = currentNode;
-        currentNode = currentNode->next;
-    }
-    return NULL;
-}
-
-// append node to end of list
-void MyDB_BufferManager :: insertNode(Node* n){
-    if(n == NULL)
-        return;
-    if(this->head == NULL){
-        n->prev = NULL;
-        n->next = NULL;
-        this->head = n;
-        this->end = n;
-    }
-    else{
-        n->next = NULL;
-        n->prev = this->end;
-        this->end->next = n;
-        this->end = n;
-    }
-}
-
-void MyDB_BufferManager :: deletePage(char* addr, pair<string,int> key){
-    //this->bufferQ.push(addr);
-    this->pageTable.erase(key);
-}
-
 // gets a temporary page that will no longer exist (1) after the buffer manager
 // has been destroyed, or (2) there are no more references to it anywhere in the
 // program.  Typically such a temporary page will be used as buffer memory.
 // since it is just a temp page, it is not associated with any particular
 // table
 MyDB_PageHandle MyDB_BufferManager :: getPage () {
-	//get new page from bufferQ
+    //get new page from bufferQ
     if(!this->bufferQ.empty()){
         //get available address in buffer
         char * newAddr = getNewBufferAddress();
@@ -197,7 +82,8 @@ MyDB_PageHandle MyDB_BufferManager :: getPage () {
         //MyDB_Page newPage(newAddr, this, false, false, NULL, NULL);
         
         //create pagehandle and return
-        MyDB_PageHandle handle = make_shared<MyDB_PageHandleBase>(make_shared<MyDB_Page>(newAddr, this, true, true, nullptr, NULL));
+        MyDB_PageHandle handle = make_shared<MyDB_PageHandleBase>(new MyDB_Page(newAddr, this, true, true, nullptr, NULL));
+        insertNode(new Node(handle->pagePtr));
         return handle;
         
     }
@@ -226,13 +112,15 @@ MyDB_PageHandle MyDB_BufferManager :: getPinnedPage (MyDB_TablePtr whichTable, l
             //MyDB_Page newPage(newAddr, this, true, false, whichTable, i);
             
             //add to pageTable
-            this->pageTable.insert({key, make_shared<MyDB_Page>(newAddr, this, true, false, whichTable, i)});
+            this->pageTable.insert({key, new MyDB_Page(newAddr, this, true, false, whichTable, i)});
+            insertNode(new Node(this->pageTable[key]));
             
             // read data into the buffer at page address
             readDataIntoBuffer(newAddr, whichTable, i);
             
             //create pagehandle and return
-            MyDB_PageHandle handle = make_shared<MyDB_PageHandleBase>(make_shared<MyDB_Page>(*pageTable[key]));
+            //MyDB_Page newPage = this->pageTable[key];
+            MyDB_PageHandle handle = make_shared<MyDB_PageHandleBase>(this->pageTable[key]);
             handle->pagePtr->refCount++;
             return handle;
         }
@@ -267,7 +155,8 @@ MyDB_PageHandle MyDB_BufferManager :: getPinnedPage () {
         //MyDB_Page newPage(newAddr, this, true, false, NULL, NULL);
         
         //create pagehandle and return
-        MyDB_PageHandle handle = make_shared<MyDB_PageHandleBase>(make_shared<MyDB_Page>(newAddr, this, true, true, nullptr, NULL));
+        MyDB_PageHandle handle = make_shared<MyDB_PageHandleBase>(new MyDB_Page (newAddr, this, true, true, nullptr, NULL));
+        insertNode(new Node(handle->pagePtr));
         handle->pagePtr->refCount++;
         return handle;
         
@@ -279,6 +168,134 @@ MyDB_PageHandle MyDB_BufferManager :: getPinnedPage () {
         return getPage();
     }
     return nullptr;
+}
+
+char* MyDB_BufferManager :: getNewBufferAddress(){
+    char* newAddr = this->bufferQ.front();
+    this->bufferQ.pop();
+    return newAddr;
+}
+
+// remove node from list and reinsert at end of list to update LRU
+void MyDB_BufferManager :: updateLRU(MyDB_Page * pg){
+    Node * node = removeNode(pg);
+    insertNode(node);
+}
+
+void MyDB_BufferManager :: readDataIntoBuffer(char* addr, MyDB_TablePtr whichTable, long i){
+    int fd = open (whichTable->getStorageLoc ().c_str (), O_CREAT|O_RDWR|O_SYNC, 0666);
+    lseek(fd, i * this->pageSize,  SEEK_CUR);
+    read(fd, addr, this->pageSize);
+    std::cout<<"closing file: %i"<<close(fd)<<endl;
+    //assert(close(fd));
+}
+
+bool MyDB_BufferManager :: evictNode(){
+    // first find node in list that contains page that is not pinned
+    Node * evictNode = getNextNode();
+    
+    if(evictNode == NULL)
+        return false;
+    
+    //get reference page and delete node
+    MyDB_Page * pageRef = evictNode->pageRef;
+    delete evictNode;
+    
+    // check dirty bit. If dirty writeback to db table or tempfile.
+    if(pageRef->dirtyBit == true){
+        if(pageRef->anon == false){
+            int fd = open (pageRef->whichTable->getStorageLoc ().c_str (), O_CREAT|O_RDWR|O_SYNC, 0666);
+            lseek(fd, pageRef->offset * this->pageSize,  SEEK_CUR);
+            write(fd, pageRef->pageAddress, this->pageSize);
+            close(fd);
+            //assert(close(fd));
+        }
+        else{
+            //anonymous page so write back to tempFile
+            int fd = open (this->tempFile.c_str (), O_CREAT|O_RDWR|O_SYNC, 0666);
+            lseek(fd, this->tempFileOffset * this->pageSize,  SEEK_CUR);
+            write(fd, pageRef->pageAddress, this->pageSize);
+            close(fd);
+        }
+        
+    }
+    
+    //delete page object
+    delete pageRef;
+    
+    return true;
+}
+
+// get next available node
+Node* MyDB_BufferManager :: getNextNode(){
+    Node * currentNode = this->head;
+    while(currentNode != NULL && currentNode->pageRef->pinned){
+        currentNode = currentNode->next;
+    }
+    if(currentNode == NULL)
+        return NULL;
+    if(currentNode == head){
+        head = currentNode->next;
+        if(head != NULL)
+            head->prev = NULL;
+    }
+    else{
+        currentNode->prev->next = currentNode->next;
+        if(currentNode->next != NULL)
+            currentNode->next->prev = currentNode->prev;
+    }
+    
+    return currentNode;
+}
+
+// find and remove node from list
+Node* MyDB_BufferManager :: removeNode(MyDB_Page * page){
+    Node * previousNode = this->head;
+    Node * currentNode = this->head;
+    if(this->head == NULL)
+        return NULL;
+    if(page == head->pageRef){
+        this->head = currentNode->next;
+        if(this->head != NULL)
+            this->head->prev = NULL;
+        else
+            this->end = NULL;
+        return currentNode;
+    }
+    while(currentNode != NULL){
+        if(currentNode->pageRef == page){
+            previousNode->next = currentNode->next;
+            if(currentNode->next != NULL)
+                currentNode->next->prev = previousNode;
+            else
+                this->end = previousNode;
+            return currentNode;
+        }
+        previousNode = currentNode;
+        currentNode = currentNode->next;
+    }
+    return NULL;
+}
+
+// append node to end of list
+void MyDB_BufferManager :: insertNode(Node* n){
+    if(n == NULL)
+        return;
+    //empty list
+    if(this->end == NULL && this->head == NULL){
+        this->head = n;
+        this->head->prev = NULL;
+        this->head->next = NULL;
+        this->end = head;
+    }
+    else{
+       
+        
+        n->next = NULL;
+        n->prev = this->end;
+        this->end->next = n;
+        this->end = n;
+    }
 }
 
 void MyDB_BufferManager :: unpin (MyDB_PageHandle unpinMe) {
@@ -302,7 +319,7 @@ MyDB_BufferManager :: MyDB_BufferManager (size_t pageSize, size_t numPages, stri
     
     //initialize linked list
     this->head = NULL;
-    this->end = this->head;
+    this->end = NULL;
     
 }
 
@@ -331,8 +348,13 @@ void MyDB_BufferManager :: addAddressToBufferQ(char* addr){
     this->bufferQ.push(addr);
 }
 
+void MyDB_BufferManager :: deletePage(char* addr, pair<string,int> key){
+    this->pageTable.erase(key);
+    this->bufferQ.push(addr);
+}
+
 MyDB_Page :: ~MyDB_Page () {
-    this->bufferManagerRef->addAddressToBufferQ(this->pageAddress);
+    //this->bufferManagerRef->addAddressToBufferQ(this->pageAddress);
     if(this->anon == false){
         pair<string,long> key(this->whichTable->getName(),this->offset);
         this->bufferManagerRef->deletePage(this->pageAddress, key);
@@ -340,7 +362,7 @@ MyDB_Page :: ~MyDB_Page () {
     
 }
 
-void MyDB_Page :: updateLRU(shared_ptr<MyDB_Page> pagePtr){
+void MyDB_Page :: updateLRU(MyDB_Page * pagePtr){
     this->bufferManagerRef->updateLRU(pagePtr);
 }
 

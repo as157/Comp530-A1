@@ -47,7 +47,7 @@ public:
     
     ~MyDB_Page();
     
-    void updateLRU(shared_ptr<MyDB_Page> pagePtr);
+    void updateLRU(MyDB_Page * pagePtr);
     
 };
 

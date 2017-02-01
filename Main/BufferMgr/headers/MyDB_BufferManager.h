@@ -54,13 +54,13 @@ public:
 
 	// FEEL FREE TO ADD ADDITIONAL PUBLIC METHODS
     void insertNode(Node * n);
-    Node * removeNode(shared_ptr<MyDB_Page> page);
+    Node * removeNode(MyDB_Page * page);
     Node * getNextNode();
     void deletePage(char* addr, pair<string,int> key);
     bool evictNode();
     char * getNewBufferAddress();
     void readDataIntoBuffer(char* addr, MyDB_TablePtr whichTable, long i);
-    void updateLRU(shared_ptr<MyDB_Page> pg);
+    void updateLRU(MyDB_Page * pg);
     void addAddressToBufferQ(char* addr);
 
 private:
@@ -80,8 +80,7 @@ private:
             return res;
         }
     };
-    unordered_map<pair<string,int>, shared_ptr<MyDB_Page>, MyHash> pageTable;
-    //map<int, shared_ptr<MyDB_Page>> LRU;
+    unordered_map<pair<string,int>, MyDB_Page*, MyHash> pageTable;
     queue<char*> bufferQ;
     Node * head;
     Node * end;

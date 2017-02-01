@@ -19,16 +19,14 @@ void MyDB_PageHandleBase :: wroteBytes () {
     this->pagePtr->updateLRU(this->pagePtr);
 }
 
-MyDB_PageHandleBase :: MyDB_PageHandleBase (shared_ptr<MyDB_Page> page) {
+MyDB_PageHandleBase :: MyDB_PageHandleBase (MyDB_Page * page) {
     this->pagePtr = page;
 }
 
 MyDB_PageHandleBase :: ~MyDB_PageHandleBase () {
     if(this->pagePtr->pinned){
-        if(this->pagePtr->refCount <= 0)
+        if(this->pagePtr->refCount <= 1)
             this->pagePtr->pinned = false;
-        else
-            this->pagePtr->refCount--;
     }
 }
 
