@@ -165,7 +165,7 @@ MyDB_PageHandle MyDB_BufferManager :: getPinnedPage () {
     else{
         evictNode();
         // the destructor of the page object should place the address back in the buffer so this case is handled at the beginning of this function. Therefore call getPage(table, i) again
-        return getPage();
+        return getPinnedPage();
     }
     return nullptr;
 }
@@ -350,11 +350,11 @@ void MyDB_BufferManager :: addAddressToBufferQ(char* addr){
 
 void MyDB_BufferManager :: deletePage(char* addr, pair<string,int> key){
     this->pageTable.erase(key);
-    this->bufferQ.push(addr);
+    //this->bufferQ.push(addr);
 }
 
 MyDB_Page :: ~MyDB_Page () {
-    //this->bufferManagerRef->addAddressToBufferQ(this->pageAddress);
+    this->bufferManagerRef->addAddressToBufferQ(this->pageAddress);
     if(this->anon == false){
         pair<string,long> key(this->whichTable->getName(),this->offset);
         this->bufferManagerRef->deletePage(this->pageAddress, key);
