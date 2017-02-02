@@ -20,6 +20,7 @@ MyDB_Page :: MyDB_Page(char* addr, MyDB_BufferManager * bfRef, bool pinned, bool
     this->offset = i;
     this->dirtyBit = false;
     this->refCount = 0;
+    this->inBuffer = true;
 }
 
 //MyDB_Page :: ~MyDB_Page () {

@@ -221,9 +221,46 @@ bool MyDB_BufferManager :: evictNode(){
     }
     
     //delete page object
-    delete pageRef;
+    //delete pageRef;
+    
+    //set inBuffer to false
+    pageRef->inBuffer = false;
+    
+    //erase from table and add address back to buffer
+    if(pageRef->whichTable != NULL){
+        pair<string,long> key(pageRef->whichTable->getName(),pageRef->offset);
+        this->pageTable.erase(key);
+    }
+    this->bufferQ.push(pageRef->pageAddress);
     
     return true;
+}
+
+void MyDB_BufferManager :: reinsert(MyDB_Page * pg){
+    //check for space in buffer
+    if(!this->bufferQ.empty()){
+        //get available address in buffer and update pageAddress on page object
+        char * newAddr = getNewBufferAddress();
+        pg->pageAddress = newAddr;
+        
+        //add to pageTable and insert in LRU linked list
+        pair<string,long> key(pg->whichTable->getName(),pg->offset);
+        this->pageTable.insert({key, pg});
+        insertNode(new Node(this->pageTable[key]));
+        
+        // read data into the buffer at page address
+        readDataIntoBuffer(newAddr, pg->whichTable, pg->offset);
+        
+        //set flag on object
+        pg->inBuffer = true;
+    }
+    
+    //otherwise evict a page
+    else{
+        evictNode();
+        reinsert(pg);
+    }
+
 }
 
 // get next available node
@@ -369,6 +406,10 @@ MyDB_Page :: ~MyDB_Page () {
 
 void MyDB_Page :: updateLRU(MyDB_Page * pagePtr){
     this->bufferManagerRef->updateLRU(pagePtr);
+}
+
+void MyDB_Page :: reinsert(MyDB_Page * pg){
+    this->bufferManagerRef->reinsert(pg);
 }
 
 

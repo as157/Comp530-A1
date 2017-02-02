@@ -7,10 +7,12 @@
 
 void *MyDB_PageHandleBase :: getBytes () {
 	//check if data is in buffer
-    //if(this->pagePtr->inBuffer != true){
-    //}
-    //return pointer to data in buffer
-    this->pagePtr->updateLRU(this->pagePtr);
+    if(this->pagePtr->inBuffer == true){
+        this->pagePtr->updateLRU(this->pagePtr);
+    }
+    else{
+        this->pagePtr->reinsert(this->pagePtr);
+    }
     return this->pagePtr->pageAddress;
 }
 

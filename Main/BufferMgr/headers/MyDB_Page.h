@@ -48,6 +48,7 @@ public:
     ~MyDB_Page();
     
     void updateLRU(MyDB_Page * pagePtr);
+    void reinsert(MyDB_Page * pg);
     
 };
 

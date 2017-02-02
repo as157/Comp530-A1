@@ -62,6 +62,7 @@ public:
     void readDataIntoBuffer(char* addr, MyDB_TablePtr whichTable, long i);
     void updateLRU(MyDB_Page * pg);
     void addAddressToBufferQ(char* addr);
+    void reinsert(MyDB_Page * pg);
 
 private:
 
