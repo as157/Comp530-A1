@@ -30,6 +30,7 @@ MyDB_PageHandleBase :: ~MyDB_PageHandleBase () {
         if(this->pagePtr->refCount <= 1)
             this->pagePtr->pinned = false;
     }
+    this->pagePtr->refCount--;
 }
 
 #endif

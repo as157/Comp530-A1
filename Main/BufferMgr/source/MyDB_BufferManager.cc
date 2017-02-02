@@ -40,6 +40,7 @@ MyDB_PageHandle MyDB_BufferManager :: getPage (MyDB_TablePtr whichTable, long i)
             
             //create pagehandle and return
             MyDB_PageHandle handle = make_shared<MyDB_PageHandleBase>(this->pageTable[key]);
+            handle->pagePtr->refCount++;
             return handle;
         }
         
@@ -61,6 +62,7 @@ MyDB_PageHandle MyDB_BufferManager :: getPage (MyDB_TablePtr whichTable, long i)
         Node * node = removeNode(it->second);
         insertNode(node);
         
+        handle->pagePtr->refCount++;
         return handle;
     }
     
@@ -84,6 +86,8 @@ MyDB_PageHandle MyDB_BufferManager :: getPage () {
         //create pagehandle and return
         MyDB_PageHandle handle = make_shared<MyDB_PageHandleBase>(new MyDB_Page(newAddr, this, true, true, nullptr, NULL));
         insertNode(new Node(handle->pagePtr));
+        
+        handle->pagePtr->refCount++;
         return handle;
         
     }
@@ -140,6 +144,7 @@ MyDB_PageHandle MyDB_BufferManager :: getPinnedPage (MyDB_TablePtr whichTable, l
         //update LRU
         updateLRU(it->second);
         
+        handle->pagePtr->refCount++;
         return handle;
     }
     return nullptr;
@@ -226,12 +231,17 @@ bool MyDB_BufferManager :: evictNode(){
     //set inBuffer to false
     pageRef->inBuffer = false;
     
-    //erase from table and add address back to buffer
-    if(pageRef->whichTable != NULL){
-        pair<string,long> key(pageRef->whichTable->getName(),pageRef->offset);
-        this->pageTable.erase(key);
+    if(pageRef->refCount > 0){
+        //erase from table and add address back to buffer
+        if(pageRef->whichTable != NULL){
+            pair<string,long> key(pageRef->whichTable->getName(),pageRef->offset);
+            this->pageTable.erase(key);
+        }
+        this->bufferQ.push(pageRef->pageAddress);
     }
-    this->bufferQ.push(pageRef->pageAddress);
+    else{
+        delete pageRef;
+    }
     
     return true;
 }

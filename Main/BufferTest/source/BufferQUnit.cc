@@ -40,6 +40,12 @@ int customTests() {
     MyDB_BufferManager myMgr (64, 1, "tempDSFSD");
     MyDB_TablePtr table1 = make_shared <MyDB_Table> ("tempTable", "foobar");
     
+    //allocate a pinned page with two handles
+    MyDB_PageHandle pg0 = myMgr.getPinnedPage(table1, 0);
+    MyDB_PageHandle pg1 = myMgr.getPinnedPage(table1, 0);
+    pg0.reset();
+    pg1.reset();
+    
     // allocate two pages which should evict page0
     MyDB_PageHandle page0 = myMgr.getPage(table1, 0);
     std::cout<<(char*)page0->getBytes()<<endl;
@@ -66,7 +72,7 @@ int main () {
 
 	QUnit::UnitTest qunit(cerr, QUnit::verbose);
     cout<<"BufferQUint launched"<<endl;
-    //customTests();
+    customTests();
     
     //return 0;
 
